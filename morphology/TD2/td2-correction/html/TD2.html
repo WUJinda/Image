@@ -1,0 +1,582 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN">
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>TD2</title>
+      <meta name="generator" content="MATLAB 7.5">
+      <meta name="date" content="2016-02-09">
+      <meta name="m-file" content="TD2"><style>
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head>
+   <body>
+      <div class="content">
+         <h2>Contents</h2>
+         <div>
+            <ul>
+               <li><a href="#1">Canevas TD2 - Morphologie Math&eacute;matique</a></li>
+               <li><a href="#2">Exercice 1 : corner extraction</a></li>
+               <li><a href="#3">Exercice 2 : diagonal dashed lines detection</a></li>
+               <li><a href="#4">Exercice 3 : decompose a binary image of a circuit board in its main</a></li>
+               <li><a href="#5">components</a></li>
+               <li><a href="#6">Reading the image</a></li>
+               <li><a href="#7">Segmentation of holes</a></li>
+               <li><a href="#8">Segmentation of square islands</a></li>
+               <li><a href="#9">Segmentation of circle islands</a></li>
+               <li><a href="#10">Segmentation of rectangular islands</a></li>
+               <li><a href="#11">Segmentation of thick connections</a></li>
+               <li><a href="#12">Segmentation of thin connections</a></li>
+            </ul>
+         </div>
+         <h2>Canevas TD2 - Morphologie Math&eacute;matique<a name="1"></a></h2><pre class="codeinput"><span class="comment">% Nom :</span>
+<span class="comment">% Pr&eacute;nom :</span>
+<span class="comment">% Groupe TD :</span>
+
+clear <span class="string">all</span>;
+close <span class="string">all</span>;
+</pre><h2>Exercice 1 : corner extraction<a name="2"></a></h2><pre class="codeinput"><span class="comment">%  Reading the image : complete the code so as to get a binary image with a</span>
+<span class="comment">%  white tree and black background</span>
+I=im2bw(imread(<span class="string">'../images/tree.jpg'</span>));
+I=~I;
+imshow(I);
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) to extract corners:</span>
+SE=strel(<span class="string">'disk'</span>,3);
+IC=imclose(I,SE);
+figure;
+imshow(IC);
+title(<span class="string">'image closing'</span>)
+diffIIC=IC - I;
+figure;
+imshow(diffIIC);
+title(<span class="string">'image - image closing : concave corners !'</span>)
+
+SE=strel(<span class="string">'disk'</span>,3);
+IO=imopen(I,SE);
+figure;
+imshow(IO);
+title(<span class="string">'image opening'</span>)
+diffIIO=I - IO;
+figure;
+imshow(diffIIO);
+title(<span class="string">'image opening - image : convex corners !'</span>)
+
+corners = diffIIC + diffIIO;
+figure;
+imshow(corners);
+title(<span class="string">'image corners !'</span>)
+</pre><img vspace="5" hspace="5" src="TD2_01.png"> <img vspace="5" hspace="5" src="TD2_02.png"> <img vspace="5" hspace="5" src="TD2_03.png"> <img vspace="5" hspace="5" src="TD2_04.png"> <img vspace="5" hspace="5" src="TD2_05.png"> <img vspace="5" hspace="5" src="TD2_06.png"> <h2>Exercice 2 : diagonal dashed lines detection<a name="3"></a></h2><pre class="codeinput">clear <span class="string">all</span>;
+close <span class="string">all</span>;
+I=rgb2gray(imread(<span class="string">'../images/dashedLines.bmp'</span>));
+imshow(I);
+
+<span class="comment">% Closing by a segment : selection of oblic lines</span>
+I1=imclose(I,strel(<span class="string">'line'</span>,10,45));
+figure,imshow(I1);
+
+<span class="comment">% Erosion by a segment : filling space between lines segments</span>
+I2=imerode(I1,strel(<span class="string">'line'</span>,50,45));
+figure,imshow(I2);
+</pre><img vspace="5" hspace="5" src="TD2_07.png"> <img vspace="5" hspace="5" src="TD2_08.png"> <img vspace="5" hspace="5" src="TD2_09.png"> <h2>Exercice 3 : decompose a binary image of a circuit board in its main<a name="4"></a></h2>
+         <h2>components<a name="5"></a></h2>
+         <h2>Reading the image<a name="6"></a></h2><pre class="codeinput">I=im2bw(imread(<span class="string">'../images/circuit.jpg'</span>),0.2);
+imshow(I);
+</pre><img vspace="5" hspace="5" src="TD2_10.png"> <h2>Segmentation of holes<a name="7"></a></h2><pre class="codeinput"><span class="comment">% Code :</span>
+SE=strel(<span class="string">'disk'</span>,5);
+IC=imclose(I,SE);
+figure;
+imshow(IC);
+title(<span class="string">'image closing'</span>)
+diffIIC=IC - I;
+figure;
+imshow(diffIIC);
+title(<span class="string">'image - image closing'</span>)
+res = bwareaopen(diffIIC, 10);
+res=imclearborder(res);
+imshow(res);
+imshow(res); title(<span class="string">'Segmented holes'</span>)
+
+<span class="comment">% Visualization</span>
+<span class="comment">%1- determine the connected components of your resulting binary image res</span>
+L = bwlabel(res, 4);
+<span class="comment">%2- convert the labeled image to colored components image</span>
+Lrgb = label2rgb(L, <span class="string">'jet'</span>, <span class="string">'k'</span>, <span class="string">'shuffle'</span>); <span class="comment">% k : black color of the 0 component</span>
+figure, imshow(Lrgb)
+title(<span class="string">'Colored holes (Lrgb)'</span>)
+<span class="comment">% 3- superimpose labeled regions to original image</span>
+figure, imshow(I), hold <span class="string">on</span>
+himage = imshow(Lrgb);
+set(himage, <span class="string">'AlphaData'</span>, 0.8);
+title(<span class="string">'Lrgb superimposed transparently on original image'</span>)
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) :</span>
+<span class="comment">% 1) closing with a circular element of radius superior to the greatest hole</span>
+<span class="comment">% radius to fill holes</span>
+<span class="comment">% Result : it closes holes + some noise artefacts</span>
+<span class="comment">% 2) substraction between IC and I to get holes + noise</span>
+<span class="comment">% Result : holes + noise</span>
+<span class="comment">% 3) filter noise according with their area + noise on borders</span>
+<span class="comment">% Result : we get holes</span>
+</pre><img vspace="5" hspace="5" src="TD2_11.png"> <img vspace="5" hspace="5" src="TD2_12.png"> <img vspace="5" hspace="5" src="TD2_13.png"> <img vspace="5" hspace="5" src="TD2_14.png"> <h2>Segmentation of square islands<a name="8"></a></h2>
+         <p>Code :</p><pre class="codeinput">SE=strel(<span class="string">'square'</span>,17);
+Idep=res+I;
+IO=imopen(Idep,SE);
+figure;
+imshow(IO);
+title(<span class="string">'image opening with a square SE'</span>)
+Isq=(~res).*IO;
+figure;
+imshow(Isq);
+title(<span class="string">'square with holes'</span>)
+<span class="comment">% Visualization</span>
+<span class="comment">%1- determine the connected components of your resulting binary image res</span>
+L = bwlabel(Isq, 4);
+<span class="comment">%2- convert the labeled image to colored components image</span>
+Lrgb = label2rgb(L, <span class="string">'jet'</span>, <span class="string">'k'</span>, <span class="string">'shuffle'</span>); <span class="comment">% k : black color of the 0 component</span>
+figure, imshow(Lrgb)
+title(<span class="string">'Colored holes (Lrgb)'</span>)
+<span class="comment">% 3- superimpose labeled regions to original image</span>
+figure, imshow(I), hold <span class="string">on</span>
+himage = imshow(Lrgb);
+set(himage, <span class="string">'AlphaData'</span>, 0.8);
+title(<span class="string">'Lrgb superimposed transparently on original image'</span>)
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) :</span>
+<span class="comment">% 1) opening with a square element of width equal to 17 (measured in the</span>
+<span class="comment">% image) on the previous closed and cleared image. If we take 15, we get rectangular islands too.</span>
+<span class="comment">% Result : ok  but we have to empty holes by multiplying with inversed holes</span>
+<span class="comment">% image.</span>
+<span class="comment">% 2) multiplication with inversed holes image (.* to use to multiply element to element)</span>
+<span class="comment">% Result : cqfd</span>
+</pre><img vspace="5" hspace="5" src="TD2_15.png"> <img vspace="5" hspace="5" src="TD2_16.png"> <img vspace="5" hspace="5" src="TD2_17.png"> <img vspace="5" hspace="5" src="TD2_18.png"> <h2>Segmentation of circle islands<a name="9"></a></h2>
+         <p>Code :</p><pre class="codeinput">SE=strel(<span class="string">'square'</span>,14);
+Idep=res+I;
+IO3=imopen(Idep,SE);
+figure; imshow(IO3); title(<span class="string">'image opening with a square SE'</span>)
+
+Id=Idep-IO3;
+figure; imshow(Id); title(<span class="string">'circles without rectangular/square islands'</span>)
+
+SE=strel(<span class="string">'disk'</span>,8);
+IO4=imopen(Id,SE);
+figure; imshow(IO4); title(<span class="string">'image opening with a disk SE, radius 8'</span>)
+
+<span class="comment">% add holes</span>
+IO4=IO4.*(~res);
+<span class="comment">% Visualization</span>
+<span class="comment">%1- determine the connected components of your resulting binary image res</span>
+L = bwlabel(IO4, 4);
+<span class="comment">%2- convert the labeled image to colored components image</span>
+Lrgb = label2rgb(L, <span class="string">'jet'</span>, <span class="string">'k'</span>, <span class="string">'shuffle'</span>); <span class="comment">% k : black color of the 0 component</span>
+figure, imshow(Lrgb)
+title(<span class="string">'Colored circular islands (Lrgb)'</span>)
+<span class="comment">% 3- superimpose labeled regions to original image</span>
+figure, imshow(I), hold <span class="string">on</span>
+himage = imshow(Lrgb);
+set(himage, <span class="string">'AlphaData'</span>, 0.8);
+title(<span class="string">'Lrgb superimposed transparently on original image'</span>)
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) :</span>
+<span class="comment">% problem : rectangular islands contains circular objects</span>
+<span class="comment">% first, it's necessary to remove rectangular objects and square objects.</span>
+<span class="comment">% Then, substract the result to the original image without holes to get circles + other remaining objects.</span>
+<span class="comment">% Then, open with a disk and multiplication with inversed holes image (.* to use to multiply element to element)</span>
+<span class="comment">% Result : cqfd</span>
+</pre><img vspace="5" hspace="5" src="TD2_19.png"> <img vspace="5" hspace="5" src="TD2_20.png"> <img vspace="5" hspace="5" src="TD2_21.png"> <img vspace="5" hspace="5" src="TD2_22.png"> <img vspace="5" hspace="5" src="TD2_23.png"> <h2>Segmentation of rectangular islands<a name="10"></a></h2>
+         <p>Code :</p><pre class="codeinput">SE=strel(<span class="string">'rectangle'</span>,[12 20]); <span class="comment">%[nb of rows nb of columns]</span>
+Idep=res+I;
+IO5=imopen(Idep,SE);
+figure; imshow(IO5); title(<span class="string">'image opening with a rectangular SE'</span>)
+
+
+<span class="comment">% add holes</span>
+IO5=IO5.*(~res);
+<span class="comment">% Visualization</span>
+<span class="comment">%1- determine the connected components of your resulting binary image res</span>
+L = bwlabel(IO5, 4);
+<span class="comment">%2- convert the labeled image to colored components image</span>
+Lrgb = label2rgb(L, <span class="string">'jet'</span>, <span class="string">'k'</span>, <span class="string">'shuffle'</span>); <span class="comment">% k : black color of the 0 component</span>
+figure, imshow(Lrgb)
+title(<span class="string">'Colored rectangular islands  (Lrgb)'</span>)
+<span class="comment">% 3- superimpose labeled regions to original image</span>
+figure, imshow(I), hold <span class="string">on</span>
+himage = imshow(Lrgb);
+set(himage, <span class="string">'AlphaData'</span>, 0.8);
+title(<span class="string">'Lrgb superimposed transparently on original image'</span>)
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) :</span>
+<span class="comment">% Start with the original image without holes, then open with a rectangular SE</span>
+<span class="comment">% Then, multiplication with inversed holes image (.* to use to multiply element to element)</span>
+<span class="comment">% Result : cqfd</span>
+</pre><img vspace="5" hspace="5" src="TD2_24.png"> <img vspace="5" hspace="5" src="TD2_25.png"> <img vspace="5" hspace="5" src="TD2_26.png"> <h2>Segmentation of thick connections<a name="11"></a></h2>
+         <p>Code :</p><pre class="codeinput">Idep=I-Isq-IO4-IO5;
+SE=strel(<span class="string">'square'</span>,5);
+IO6=imopen(Idep,SE);
+figure; imshow(IO6); title(<span class="string">'residue image opening with a small rectangular SE'</span>)
+
+<span class="comment">% Visualization</span>
+<span class="comment">%1- determine the connected components of your resulting binary image res</span>
+L = bwlabel(IO6, 4);
+<span class="comment">%2- convert the labeled image to colored components image</span>
+Lrgb = label2rgb(L, <span class="string">'jet'</span>, <span class="string">'k'</span>, <span class="string">'shuffle'</span>); <span class="comment">% k : black color of the 0 component</span>
+figure, imshow(Lrgb)
+title(<span class="string">'Colored thick connections  (Lrgb)'</span>)
+<span class="comment">% 3- superimpose labeled regions to original image</span>
+figure, imshow(I), hold <span class="string">on</span>
+himage = imshow(Lrgb);
+set(himage, <span class="string">'AlphaData'</span>, 0.8);
+title(<span class="string">'Lrgb superimposed transparently on original image'</span>)
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) :</span>
+<span class="comment">% Start with original image without all circle, square and rectangular</span>
+<span class="comment">% islands. Then open with a square included into thick connections but not</span>
+<span class="comment">% into thin ones.</span>
+<span class="comment">% Result : cqfd</span>
+</pre><img vspace="5" hspace="5" src="TD2_27.png"> <img vspace="5" hspace="5" src="TD2_28.png"> <img vspace="5" hspace="5" src="TD2_29.png"> <h2>Segmentation of thin connections<a name="12"></a></h2>
+         <p>Code :</p><pre class="codeinput">Idep=I-Isq-IO4-IO5-IO6;
+SE=strel(<span class="string">'square'</span>,3);
+IO7=imopen(Idep,SE);
+figure; imshow(IO7); title(<span class="string">'residue image opening with a small rectangular SE'</span>)
+
+<span class="comment">% Visualization</span>
+<span class="comment">%1- determine the connected components of your resulting binary image res</span>
+L = bwlabel(IO7, 4);
+<span class="comment">%2- convert the labeled image to colored components image</span>
+Lrgb = label2rgb(L, <span class="string">'jet'</span>, <span class="string">'k'</span>, <span class="string">'shuffle'</span>); <span class="comment">% k : black color of the 0 component</span>
+figure, imshow(Lrgb)
+title(<span class="string">'Colored thin connections  (Lrgb)'</span>)
+<span class="comment">% 3- superimpose labeled regions to original image</span>
+figure, imshow(I), hold <span class="string">on</span>
+himage = imshow(Lrgb);
+set(himage, <span class="string">'AlphaData'</span>, 0.8);
+title(<span class="string">'Lrgb superimposed transparently on original image'</span>)
+
+<span class="comment">% Comment all steps of your approach (SE, operation, result) :</span>
+<span class="comment">% Start with original image without all islands and without thick</span>
+<span class="comment">% connections. Then open with a small square included into thin connections</span>
+<span class="comment">% Result : cqfd</span>
+</pre><img vspace="5" hspace="5" src="TD2_30.png"> <img vspace="5" hspace="5" src="TD2_31.png"> <img vspace="5" hspace="5" src="TD2_32.png"> <p class="footer"><br>
+            Published with MATLAB&reg; 7.5<br></p>
+      </div>
+      <!--
+##### SOURCE BEGIN #####
+%% Canevas TD2 - Morphologie Mathématique
+
+% Nom : 
+% Prénom :
+% Groupe TD :
+
+clear all;
+close all;
+
+%% Exercice 1 : corner extraction
+
+%  Reading the image : complete the code so as to get a binary image with a
+%  white tree and black background 
+I=im2bw(imread('../images/tree.jpg'));
+I=~I;
+imshow(I);
+
+% Comment all steps of your approach (SE, operation, result) to extract corners:
+SE=strel('disk',3);
+IC=imclose(I,SE);
+figure;
+imshow(IC);
+title('image closing')
+diffIIC=IC - I;
+figure;
+imshow(diffIIC);
+title('image - image closing : concave corners !')
+
+SE=strel('disk',3);
+IO=imopen(I,SE);
+figure;
+imshow(IO);
+title('image opening')
+diffIIO=I - IO;
+figure;
+imshow(diffIIO);
+title('image opening - image : convex corners !')
+
+corners = diffIIC + diffIIO;
+figure;
+imshow(corners);
+title('image corners !')
+
+
+%% Exercice 2 : diagonal dashed lines detection
+clear all;
+close all;
+I=rgb2gray(imread('../images/dashedLines.bmp'));
+imshow(I);
+
+% Closing by a segment : selection of oblic lines
+I1=imclose(I,strel('line',10,45));
+figure,imshow(I1);
+
+% Erosion by a segment : filling space between lines segments
+I2=imerode(I1,strel('line',50,45));
+figure,imshow(I2);
+
+
+
+%% Exercice 3 : decompose a binary image of a circuit board in its main
+%% components
+%% Reading the image 
+
+I=im2bw(imread('../images/circuit.jpg'),0.2);
+imshow(I);
+
+%% Segmentation of holes
+
+% Code :
+SE=strel('disk',5);
+IC=imclose(I,SE);
+figure;
+imshow(IC);
+title('image closing')
+diffIIC=IC - I;
+figure;
+imshow(diffIIC);
+title('image - image closing')
+res = bwareaopen(diffIIC, 10);
+res=imclearborder(res);
+imshow(res);
+imshow(res); title('Segmented holes')
+
+% Visualization
+%1- determine the connected components of your resulting binary image res
+L = bwlabel(res, 4);
+%2- convert the labeled image to colored components image
+Lrgb = label2rgb(L, 'jet', 'k', 'shuffle'); % k : black color of the 0 component
+figure, imshow(Lrgb)
+title('Colored holes (Lrgb)')
+% 3- superimpose labeled regions to original image
+figure, imshow(I), hold on
+himage = imshow(Lrgb);
+set(himage, 'AlphaData', 0.8);
+title('Lrgb superimposed transparently on original image')
+
+% Comment all steps of your approach (SE, operation, result) :
+% 1) closing with a circular element of radius superior to the greatest hole
+% radius to fill holes
+% Result : it closes holes + some noise artefacts
+% 2) substraction between IC and I to get holes + noise
+% Result : holes + noise 
+% 3) filter noise according with their area + noise on borders
+% Result : we get holes 
+
+%% Segmentation of square islands
+% Code :
+SE=strel('square',17);
+Idep=res+I;
+IO=imopen(Idep,SE);
+figure;
+imshow(IO);
+title('image opening with a square SE')
+Isq=(~res).*IO;
+figure;
+imshow(Isq);
+title('square with holes')
+% Visualization
+%1- determine the connected components of your resulting binary image res
+L = bwlabel(Isq, 4);
+%2- convert the labeled image to colored components image
+Lrgb = label2rgb(L, 'jet', 'k', 'shuffle'); % k : black color of the 0 component
+figure, imshow(Lrgb)
+title('Colored holes (Lrgb)')
+% 3- superimpose labeled regions to original image
+figure, imshow(I), hold on
+himage = imshow(Lrgb);
+set(himage, 'AlphaData', 0.8);
+title('Lrgb superimposed transparently on original image')
+
+% Comment all steps of your approach (SE, operation, result) :
+% 1) opening with a square element of width equal to 17 (measured in the
+% image) on the previous closed and cleared image. If we take 15, we get rectangular islands too. 
+% Result : ok  but we have to empty holes by multiplying with inversed holes
+% image. 
+% 2) multiplication with inversed holes image (.* to use to multiply element to element) 
+% Result : cqfd
+
+%% Segmentation of circle islands
+% Code :
+SE=strel('square',14);
+Idep=res+I;
+IO3=imopen(Idep,SE);
+figure; imshow(IO3); title('image opening with a square SE')
+
+Id=Idep-IO3; 
+figure; imshow(Id); title('circles without rectangular/square islands')
+
+SE=strel('disk',8);
+IO4=imopen(Id,SE);
+figure; imshow(IO4); title('image opening with a disk SE, radius 8')
+
+% add holes
+IO4=IO4.*(~res);
+% Visualization
+%1- determine the connected components of your resulting binary image res
+L = bwlabel(IO4, 4);
+%2- convert the labeled image to colored components image
+Lrgb = label2rgb(L, 'jet', 'k', 'shuffle'); % k : black color of the 0 component
+figure, imshow(Lrgb)
+title('Colored circular islands (Lrgb)')
+% 3- superimpose labeled regions to original image
+figure, imshow(I), hold on
+himage = imshow(Lrgb);
+set(himage, 'AlphaData', 0.8);
+title('Lrgb superimposed transparently on original image')
+
+% Comment all steps of your approach (SE, operation, result) :
+% problem : rectangular islands contains circular objects 
+% first, it's necessary to remove rectangular objects and square objects. 
+% Then, substract the result to the original image without holes to get circles + other remaining objects. 
+% Then, open with a disk and multiplication with inversed holes image (.* to use to multiply element to element) 
+% Result : cqfd
+
+%% Segmentation of rectangular islands
+% Code :
+SE=strel('rectangle',[12 20]); %[nb of rows nb of columns]
+Idep=res+I;
+IO5=imopen(Idep,SE);
+figure; imshow(IO5); title('image opening with a rectangular SE')
+
+
+% add holes
+IO5=IO5.*(~res);
+% Visualization
+%1- determine the connected components of your resulting binary image res
+L = bwlabel(IO5, 4);
+%2- convert the labeled image to colored components image
+Lrgb = label2rgb(L, 'jet', 'k', 'shuffle'); % k : black color of the 0 component
+figure, imshow(Lrgb)
+title('Colored rectangular islands  (Lrgb)')
+% 3- superimpose labeled regions to original image
+figure, imshow(I), hold on
+himage = imshow(Lrgb);
+set(himage, 'AlphaData', 0.8);
+title('Lrgb superimposed transparently on original image')
+
+% Comment all steps of your approach (SE, operation, result) :
+% Start with the original image without holes, then open with a rectangular SE 
+% Then, multiplication with inversed holes image (.* to use to multiply element to element) 
+% Result : cqfd
+
+%% Segmentation of thick connections 
+% Code :
+Idep=I-Isq-IO4-IO5;
+SE=strel('square',5);
+IO6=imopen(Idep,SE);
+figure; imshow(IO6); title('residue image opening with a small rectangular SE')
+
+% Visualization
+%1- determine the connected components of your resulting binary image res
+L = bwlabel(IO6, 4);
+%2- convert the labeled image to colored components image
+Lrgb = label2rgb(L, 'jet', 'k', 'shuffle'); % k : black color of the 0 component
+figure, imshow(Lrgb)
+title('Colored thick connections  (Lrgb)')
+% 3- superimpose labeled regions to original image
+figure, imshow(I), hold on
+himage = imshow(Lrgb);
+set(himage, 'AlphaData', 0.8);
+title('Lrgb superimposed transparently on original image')
+
+% Comment all steps of your approach (SE, operation, result) :
+% Start with original image without all circle, square and rectangular
+% islands. Then open with a square included into thick connections but not
+% into thin ones.
+% Result : cqfd
+
+%% Segmentation of thin connections 
+% Code :
+Idep=I-Isq-IO4-IO5-IO6;
+SE=strel('square',3);
+IO7=imopen(Idep,SE);
+figure; imshow(IO7); title('residue image opening with a small rectangular SE')
+
+% Visualization
+%1- determine the connected components of your resulting binary image res
+L = bwlabel(IO7, 4);
+%2- convert the labeled image to colored components image
+Lrgb = label2rgb(L, 'jet', 'k', 'shuffle'); % k : black color of the 0 component
+figure, imshow(Lrgb)
+title('Colored thin connections  (Lrgb)')
+% 3- superimpose labeled regions to original image
+figure, imshow(I), hold on
+himage = imshow(Lrgb);
+set(himage, 'AlphaData', 0.8);
+title('Lrgb superimposed transparently on original image')
+
+% Comment all steps of your approach (SE, operation, result) :
+% Start with original image without all islands and without thick
+% connections. Then open with a small square included into thin connections
+% Result : cqfd
+
+
+
+##### SOURCE END #####
+-->
+   </body>
+</html>
